@@ -1331,71 +1331,57 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 			$woo_product->prepare_variants_for_group();
 		}
 
-		$create_product_group_result = $this->check_api_result(
-			$this->fbgraph->create_product_group(
-				$this->get_product_catalog_id(),
-				$product_group_data
-			),
-			$product_group_data,
-			$woo_product->get_id()
+		$create_product_group_response = facebook_for_woocommerce()->get_api()->create_product_group(
+			$this->get_product_catalog_id(),
+			$product_group_data
 		);
 
-		// New variant added
-		if ( $create_product_group_result ) {
-			$decode_result       = WC_Facebookcommerce_Utils::decode_json( $create_product_group_result['body'] );
-			$fb_product_group_id = $decode_result->id;
+		$fb_product_group_id = $create_product_group_response->get_id();
 
-			update_post_meta(
-				$woo_product->get_id(),
-				self::FB_PRODUCT_GROUP_ID,
-				$fb_product_group_id
-			);
 
-			/** TODO: restore when adopting FBE 2.0
-			$this->display_success_message(
-				'Created product group <a href="https://facebook.com/' .
-				$fb_product_group_id . '" target="_blank">' .
-				$fb_product_group_id . '</a> on Facebook.'
-			);
-			*/
+		update_post_meta(
+			$woo_product->get_id(),
+			self::FB_PRODUCT_GROUP_ID,
+			$fb_product_group_id
+		);
 
-			return $fb_product_group_id;
-		}
+		/** TODO: restore when adopting FBE 2.0
+		$this->display_success_message(
+			'Created product group <a href="https://facebook.com/' .
+			$fb_product_group_id . '" target="_blank">' .
+			$fb_product_group_id . '</a> on Facebook.'
+		);
+		*/
+
+		return $fb_product_group_id;
 	}
 
 	function create_product_item( $woo_product, $retailer_id, $product_group_id ) {
 
 		$product_data = $woo_product->prepare_product( $retailer_id );
 
-		$product_result = $this->check_api_result(
-			$this->fbgraph->create_product_item(
-				$product_group_id,
-				$product_data
-			),
-			$product_data,
-			$woo_product->get_id()
+		$create_product_response = facebook_for_woocommerce()->get_api()->create_product_item(
+			$product_group_id,
+			$product_data
 		);
 
-		if ( $product_result ) {
-			$decode_result      = WC_Facebookcommerce_Utils::decode_json( $product_result['body'] );
-			$fb_product_item_id = $decode_result->id;
+		$fb_product_item_id = $create_product_response->get_id();
 
-			update_post_meta(
-				$woo_product->get_id(),
-				self::FB_PRODUCT_ITEM_ID,
-				$fb_product_item_id
-			);
+		update_post_meta(
+			$woo_product->get_id(),
+			self::FB_PRODUCT_ITEM_ID,
+			$fb_product_item_id
+		);
 
-			/** TODO: restore when adopting FBE 2.0
-			$this->display_success_message(
-				'Created product item <a href="https://facebook.com/' .
-				$fb_product_item_id . '" target="_blank">' .
-				$fb_product_item_id . '</a> on Facebook.'
-			);
-			*/
+		/** TODO: restore when adopting FBE 2.0
+		$this->display_success_message(
+			'Created product item <a href="https://facebook.com/' .
+			$fb_product_item_id . '" target="_blank">' .
+			$fb_product_item_id . '</a> on Facebook.'
+		);
+		*/
 
-			return $fb_product_item_id;
-		}
+		return $fb_product_item_id;
 	}
 
 
@@ -1449,11 +1435,9 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 			$product_group_data['default_product_id'] = $default_product_fbid;
 		}
 
-		$result = $this->check_api_result(
-			$this->fbgraph->update_product_group(
-				$fb_product_group_id,
-				$product_group_data
-			)
+		facebook_for_woocommerce()->get_api()->update_product_group(
+			$fb_product_group_id,
+			$product_group_data
 		);
 
 		/** TODO: restore when adopting FBE 2.0
@@ -1535,11 +1519,9 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 			$product_data['additional_image_urls'] = '';
 		}
 
-		$result = $this->check_api_result(
-			$this->fbgraph->update_product_item(
-				$fb_product_item_id,
-				$product_data
-			)
+		facebook_for_woocommerce()->get_api()->update_product_item(
+			$fb_product_item_id,
+			$product_data
 		);
 
 		/** TODO: restore when adopting FBE 2.0
@@ -3350,7 +3332,7 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 		);
 		if ( $fb_product_item_id ) {
 			$pi_result =
-			$this->fbgraph->delete_product_item( $fb_product_item_id );
+			facebook_for_woocommerce()->get_api()->delete_product_item( $fb_product_item_id );
 			WC_Facebookcommerce_Utils::log( $pi_result );
 		}
 	}
@@ -3369,8 +3351,7 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 
 		if ( $product_group_id ) {
 
-			// TODO: replace with a call to API::delete_product_group() {WV 2020-05-26}
-			$pg_result = $this->fbgraph->delete_product_group( $product_group_id );
+			$pg_result = facebook_for_woocommerce()->get_api()->delete_product_group( $product_group_id );
 
 			\WC_Facebookcommerce_Utils::log( $pg_result );
 		}
@@ -3448,7 +3429,7 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 				 return;
 			}
 
-			$set_visibility = $this->fbgraph->update_product_item( $fb_product_item_id, [ 'visibility' => $visibility ] );
+			$set_visibility = facebook_for_woocommerce()->get_api()->update_product_item( $fb_product_item_id, [ 'visibility' => $visibility ] );
 
 			if ( $this->check_api_result( $set_visibility ) ) {
 				Products::set_product_visibility( $product, $should_set_visible );
